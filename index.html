@@ -1,199 +1,176 @@
 <!doctype html>
 <html manifest="cache.manifest">
-	<head>
-		<title>SHA1 Checksum Calculator</title>
-		<style>
-		body {
-			background-color: #ADADAD;
-			font-family: sans-serif;
-			color:white;
+<head>
+<title>SHA1 Checksum Calculator</title>
+<style>
+body {
+	background-color: #ADADAD;
+	font-family: sans-serif;
+	color:white;
+}
+a {
+	text-decoration: none;
+	font-weight: bold;
+	color:#EDFAFF;
+}
+#floater {
+	top: 40%;
+	left: 50%;
+	position:absolute;
+}
+#center {
+	display: inline-block;
+	color: black;
+	margin: -150px 0 0 -300px;
+	width: 600px;
+	z-index: 99;
+	padding-right: 15px;
+	padding-left: 15px;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	opacity: 1;
+	background-image: -webkit-linear-gradient(273deg, rgb(252, 252, 252), rgb(247, 247, 247) 3%, rgb(242, 242, 242) 12%, rgb(217, 217, 217) 90%, rgb(191, 191, 191)); 
+	background-image: -moz-linear-gradient(273deg, rgb(252, 252, 252), rgb(247, 247, 247) 3%, rgb(242, 242, 242) 12%, rgb(217, 217, 217) 90%, rgb(191, 191, 191)); 
+	background-attachment: initial; 
+	background-origin: initial; 
+	background-clip: initial; 
+	background-color: initial; 
+	-webkit-box-shadow: #A5A5A5 0px 0px 6px 6px; 
+	-moz-box-shadow: #A5A5A5 0px 0px 6px 6px; 
+	border-radius:30px 0;
+	background-position: initial initial; 
+	background-repeat: initial initial; 
+}
+#value {
+	color: black;
+	margin: 0 0 0 -260px;
+	top: 230px;
+	left: 42px;
+	width: 510px;
+	padding-bottom: 10px;
+	z-index: 99;
+	padding-right: 15px;
+	padding-left: 15px;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	opacity: 1;
+	background-image: -webkit-linear-gradient(273deg, rgb(252, 252, 252), rgb(247, 247, 247) 3%, rgb(242, 242, 242) 12%, rgb(217, 217, 217) 90%, rgb(191, 191, 191)); 
+	background-image: -moz-linear-gradient(273deg, rgb(252, 252, 252), rgb(247, 247, 247) 3%, rgb(242, 242, 242) 12%, rgb(217, 217, 217) 90%, rgb(191, 191, 191)); 
+	background-attachment: initial; 
+	background-origin: initial; 
+	background-clip: initial; 
+	background-color: initial; 
+	-webkit-box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 6px 6px; 
+	-moz-box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 6px 6px; 
+	font-family: monospace;
+	border-bottom-right-radius: 10px 10px; 
+	border-bottom-left-radius: 10px 10px;
+	background-position: initial initial; 
+	background-repeat: initial initial; 
+	padding-top: 15px;
+	font-size: 20px;
+}
+</style>
+</head>
+<body>
+<script>
+var p = 0, worker;
+function fileSlice(file, start, length){
+	var end = length + start;
+	if(file.mozSlice){
+		return file.mozSlice(start, end);
+	} else if(file.webkitSlice){
+		return file.webkitSlice(start, end);
+	}
+}
+function selected(file){
+	if(worker) worker.terminate();
+	var size = file.size;
+	var realsize = Math.ceil((size/4 + 3)/16) * 16 * 4;
+	worker = new Worker('worker.js');
+	lasttime = +new Date;
+	lastprocessed = 0;
+	worker.onmessage = function(e){
+		if(e.data.action == 'requestChunk'){
+			var fr = new FileReader();
+			fr.onload = function(){
+				worker.postMessage(fr.result);
+			}
+			fr.readAsArrayBuffer(fileSlice(file, e.data.position, e.data.amount));
+		}else{
+			var time = +new Date;
+			var pct = e.data.processed/realsize;
+			document.getElementById('progress').value = pct;
+			document.getElementById('value').style.display = '';
+			document.getElementById('progress').style.display = '';
+			document.getElementById('value').innerHTML = e.data.hash;
+			document.getElementById('pct').innerHTML = (pct*100).toFixed(2)+'%';
+			document.getElementById('speed').innerHTML = (((e.data.processed - lastprocessed)/((time - lasttime)/1000))/1024/1024).toFixed(2) + 'MB/s';
+			//e.data.processed+'/'+realsize+' '+
+			if(p++ % 14 == 0){
+				lasttime = time;
+				lastprocessed = e.data.processed;
+			}
 		}
-		a {
-		  text-decoration: none;
-		  font-weight: bold;
-		  
-			color:#EDFAFF;
-		}
-		#floater {
-			top: 40%;
-			left: 50%;
-			position:absolute;
-    }
-		#center {
-			display: inline-block;
-			color: black;
-			margin: -150px 0 0 -300px;
-			width: 600px;
-			z-index: 99;
-			padding-right: 15px;
-			padding-left: 15px;
-			-webkit-box-sizing: border-box;
-			box-sizing: border-box;
-			opacity: 1;
-			background-image: -webkit-linear-gradient(273deg, rgb(252, 252, 252), rgb(247, 247, 247) 3%, rgb(242, 242, 242) 12%, rgb(217, 217, 217) 90%, rgb(191, 191, 191)); 
-			background-image: -moz-linear-gradient(273deg, rgb(252, 252, 252), rgb(247, 247, 247) 3%, rgb(242, 242, 242) 12%, rgb(217, 217, 217) 90%, rgb(191, 191, 191)); 
-			background-attachment: initial; 
-			background-origin: initial; 
-			background-clip: initial; 
-			background-color: initial; 
-			-webkit-box-shadow: #A5A5A5 0px 0px 6px 6px; 
-			-moz-box-shadow: #A5A5A5 0px 0px 6px 6px; 
-			border-top-left-radius: 30px 30px; 
-			border-top-right-radius: 0 0; 
-			border-bottom-right-radius: 30px 30px; 
-			border-bottom-left-radius: 0 0;
-			background-position: initial initial; 
-			background-repeat: initial initial; 
-		}
-    
-    #value {
-			color: black;
-			margin: 0 0 0 -260px;
-			top: 230px;
-			left: 42px;
-			width: 510px;
-			padding-bottom: 10px;
-			z-index: 99;
-			padding-right: 15px;
-			padding-left: 15px;
-			-webkit-box-sizing: border-box;
-			box-sizing: border-box;
-			opacity: 1;
-			background-image: -webkit-linear-gradient(273deg, rgb(252, 252, 252), rgb(247, 247, 247) 3%, rgb(242, 242, 242) 12%, rgb(217, 217, 217) 90%, rgb(191, 191, 191)); 
-			background-image: -moz-linear-gradient(273deg, rgb(252, 252, 252), rgb(247, 247, 247) 3%, rgb(242, 242, 242) 12%, rgb(217, 217, 217) 90%, rgb(191, 191, 191)); 
-			background-attachment: initial; 
-			background-origin: initial; 
-			background-clip: initial; 
-			background-color: initial; 
-			-webkit-box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 6px 6px; 
-			-moz-box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 6px 6px; 
-      font-family: monospace;
-			border-bottom-right-radius: 10px 10px; 
-			border-bottom-left-radius: 10px 10px;
-			background-position: initial initial; 
-			background-repeat: initial initial; 
-			padding-top: 15px;
-			font-size: 20px;
-		}
-    
-		</style>
-	</head>
-	<body>
-		<script>
-      var p = 0, worker;
-      function fileSlice(file, start, length){
-        var end = length + start;
-        if(file.mozSlice){
-          return file.mozSlice(start, end);
-        }else if(file.webkitSlice){
-          return file.webkitSlice(start, end);
-        }
-      }
+	}
+	worker.onerror = function(e){
+		console.error(e);
+	}
+	worker.postMessage({file: file, size: size});
+}
+//do html5 drag and drop
+function stopEvent(e){e.preventDefault();e.stopPropogation();}
 
-      function selected(file){
-        if(worker) worker.terminate();
-        var size = file.size;
-        var realsize = Math.ceil((size/4 + 3)/16) * 16 * 4;
-        worker = new Worker('worker.js');
-        lasttime = +new Date;
-        lastprocessed = 0;
-        worker.onmessage = function(e){
-          if(e.data.action == 'requestChunk'){
-            var fr = new FileReader();
-            fr.onload = function(){
-              worker.postMessage(fr.result);
-            }
-            fr.readAsArrayBuffer(fileSlice(file, e.data.position, e.data.amount));
-          }else{
-            var time = +new Date;
-            var pct = e.data.processed/realsize;
-            document.getElementById('progress').value = pct;
-            document.getElementById('value').style.display = '';
-            document.getElementById('progress').style.display = '';
-            document.getElementById('value').innerHTML = e.data.hash;
-            document.getElementById('pct').innerHTML = (pct*100).toFixed(2)+'%';
-            document.getElementById('speed').innerHTML = (((e.data.processed - lastprocessed)/((time - lasttime)/1000))/1024/1024).toFixed(2) + 'MB/s';
-            //e.data.processed+'/'+realsize+' '+
-            if(p++ % 14 == 0){
-              lasttime = time;
-              lastprocessed = e.data.processed;
-            }
-          }
-        }
-        worker.onerror = function(e){
-          console.log(e);
-        }
-        worker.postMessage({file: file, size: size});
-      }
-			//do html5 drag and drop
-			document.addEventListener("dragenter", function(e){e.preventDefault();e.stopPropagation()}, false);
-			document.addEventListener("dragexit", function(e){e.preventDefault();e.stopPropagation()}, false);
-			document.addEventListener("dragover", function(e){e.preventDefault();e.stopPropagation()}, false);
-			document.addEventListener("drop", function(e){
-				e.preventDefault();
-				e.stopPropagation();
-				var files = e.dataTransfer.files;
-				if(files.length > 0) selected(files[0]);
-			}, false);
+document.addEventListener("dragenter", stopEvt, false);
+document.addEventListener("dragexit", stopEvt, false);
+document.addEventListener("dragover", stopEvt, false);
+document.addEventListener("drop", function(e){
+	stopEvt(e);
+	var file = e.dataTransfer.files[0];
+	if (file) selected(file);
+}, false);
 
-		</script>
-		<div id="floater">
-		<div id="center">
+</script>
+<div id="floater">
+<div id="center">
 
-			<h1 >SHA1 <span style="color:gray">Checksum</span> Calculator</h1>
-			<p>
-				This is a simple <b>SHA1 checksumming utility</b> written in <b>Javascript</b> and uses the File API, Typed Arrays, and Web Workers. It's <b>pretty fast</b> and can handle files up to <b>several gigabytes</b> and works <b>offline</b> (just bookmark this page).
-			</p>
-			<div id="featdetect">
-			<p>
-				To begin, select <b>a file</b> (or <b>drag it here</b>).
-			</p>
-			<div style="float:right">
-			  <span id="speed"  style='padding-right:10px;'></span>
-			  <span id="pct" style='font-weight:bold'></span>
-			</div>
-			<p>
-				<input type="file" onchange="selected(this.files[0])">
-			</p>
-			</div>
-			<progress id="progress" style="width:570px;margin-bottom:12px;display:none" value=0></progress>
-		</div>
-		
-		<div id="value" style="display:none">
-		  3da541559918a808c2402bba5012f6c60b27661c
-		</div>
-		</div>
-		<footer style="position: absolute; bottom: 0; width: auto;padding: 20px;">
-		<b>Hello.</b> This app was made by <a href="http://twitter.com/antimatter15">@antimatter15</a> (or <a href="https://plus.google.com/116347431032639424492/about">Google+</a>). Read my <a href="http://antimatter15.com/wp/">blog</a> for some other neat stuff. See how it works on <a href="https://github.com/antimatter15/js-typed-array-sha1">Github</a>.
-		</footer>
-		<script>
-		  (function(){
-		  try {
-		    var fr = new FileReader();
-        if(Worker && new Uint8Array && ArrayBuffer && fr.readAsArrayBuffer){
-          //yay
-        }else{
-          throw "boo";
-        }
-		  }catch(err){
-		    document.getElementById('featdetect').innerHTML = "It appears <b>your browser does not support all</b> the necessary features, it is known to work in recent versions of Chrome and Firefox.";
-		  }
-		  })();
-		</script>
-		
-		<script type="text/javascript">
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-1367972-4']);
-      _gaq.push(['_trackPageview']);
+	<h1 >SHA1 <span style="color:gray">Checksum</span> Calculator</h1>
+	<p>
+		This is a simple <b>SHA1 checksumming utility</b> written in <b>JavaScript</b> and uses the File API, Typed Arrays, and Web Workers. It's <b>pretty fast</b> and can handle files up to <b>several gigabytes</b> and works <b>offline</b> (just bookmark this page).
+	</p>
+	<div id="featdetect">
+	<p>
+		To begin, select <b>a file</b> (or <b>drag it here</b>).
+	</p>
+	<div style="float:right">
+	  <span id="speed"  style='padding-right:10px;'></span>
+	  <span id="pct" style='font-weight:bold'></span>
+	</div>
+	<p>
+		<input type="file" onchange="selected(this.files[0])">
+	</p>
+	</div>
+	<progress id="progress" style="width:570px;margin-bottom:12px;display:none" value=0></progress>
+</div>
 
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
-	</body>
+<div id="value" style="display:none">
+  3da541559918a808c2402bba5012f6c60b27661c
+</div>
+</div>
+<footer style="position: absolute; bottom: 0; width: auto;padding: 20px;">
+<b>Hello.</b> This app was made by <a href="http://twitter.com/antimatter15">@antimatter15</a> (or <a href="https://plus.google.com/116347431032639424492/about">Google+</a>). Read my <a href="http://antimatter15.com/wp/">blog</a> for some other neat stuff. See how it works on <a href="https://github.com/antimatter15/js-typed-array-sha1">Github</a>.
+</footer>
+<script>
+if (Worker && Uint8Array && new Uint8Array() && ArrayBuffer && FileReader && new FileReader.readAsArrayBuffer) {}
+else {
+	document.getElementById('featdetect').innerHTML = "It appears <b>your browser does not support all</b> the necessary features, it is known to work in recent versions of Chrome and Firefox.";
+}
+</script>
+
+<script>
+// yeah I'm so proud of this minified code
+var _gaq = [['_setAccount','UA-1367972-4'],['_trackPageview']];
+document.head.appendChild(document.createElement('script')).src='//www.google-analytics.com/ga.js';
+</script>
+</body>
 </html>
-
-
-
