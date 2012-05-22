@@ -43,6 +43,7 @@ a {
 	        box-shadow: 0 0 6px 6px rgba(0, 0, 0, 0.1);
 	font-family: monospace;
 	border-radius: 0 0 10px 10px;
+	display: none;
 }
 #center, #value {
 	-webkit-box-sizing: border-box;
@@ -59,6 +60,17 @@ a {
 	background-image:      -o-linear-gradient(273deg, #fcfcfc, #f7f7f7 3%, #f2f2f2 12%, #d9d9d9 90%, #bfbfbf);
 	background-image:         linear-gradient(357deg, #fcfcfc, #f7f7f7 3%, #f2f2f2 12%, #d9d9d9 90%, #bfbfbf);
 }
+#progress {
+	width:570px;
+	margin-bottom:12px;
+	display:none;
+}
+footer {
+	position: absolute;
+	bottom: 0;
+	width: auto;
+	padding: 20px;
+}
 </style>
 </head>
 <body>
@@ -66,27 +78,28 @@ a {
 var p = 0, worker;
 function fileSlice(file, start, length){
 	var end = length + start;
-	if(file.mozSlice){
+	if (file.mozSlice){
 		return file.mozSlice(start, end);
-	} else if(file.webkitSlice){
+	} else if  (file.webkitSlice){
 		return file.webkitSlice(start, end);
+	} else if (file.slice) {
+		return file.slice(start, end);
 	}
 }
 function selected(file){
 	if(worker) worker.terminate();
-	var size = file.size;
-	var realsize = Math.ceil((size/4 + 3)/16) * 16 * 4;
+	var realsize = Math.ceil((file.size/4 + 3)/16) * 16 * 4;
 	worker = new Worker('worker.js');
 	lasttime = +new Date;
 	lastprocessed = 0;
 	worker.onmessage = function(e){
-		if(e.data.action == 'requestChunk'){
+		if (e.data.action == 'requestChunk'){
 			var fr = new FileReader();
 			fr.onload = function(){
 				worker.postMessage(fr.result);
 			}
 			fr.readAsArrayBuffer(fileSlice(file, e.data.position, e.data.amount));
-		}else{
+		} else{
 			var time = +new Date;
 			var pct = e.data.processed/realsize;
 			document.getElementById('progress').value = pct;
@@ -108,7 +121,7 @@ function selected(file){
 	worker.postMessage({file: file, size: size});
 }
 //do html5 drag and drop
-function stopEvent(e){e.preventDefault();e.stopPropogation();}
+function stopEvt(e){e.preventDefault();e.stopPropogation();}
 
 document.addEventListener("dragenter", stopEvt, false);
 document.addEventListener("dragexit", stopEvt, false);
@@ -123,7 +136,7 @@ document.addEventListener("drop", function(e){
 <div id="floater">
 <div id="center">
 
-	<h1 >SHA1 <span style="color:gray">Checksum</span> Calculator</h1>
+	<h1>SHA1 <span style="color:gray">Checksum</span> Calculator</h1>
 	<p>
 		This is a simple <b>SHA1 checksumming utility</b> written in <b>JavaScript</b> and uses the File API, Typed Arrays, and Web Workers. It's <b>pretty fast</b> and can handle files up to <b>several gigabytes</b> and works <b>offline</b> (just bookmark this page).
 	</p>
@@ -132,32 +145,30 @@ document.addEventListener("drop", function(e){
 		To begin, select <b>a file</b> (or <b>drag it here</b>).
 	</p>
 	<div style="float:right">
-	  <span id="speed"  style='padding-right:10px;'></span>
-	  <span id="pct" style='font-weight:bold'></span>
+	  <span id="speed" style='padding-right:10px;'></span>
+	  <b id="pct"></b>
 	</div>
 	<p>
 		<input type="file" onchange="selected(this.files[0])">
 	</p>
 	</div>
-	<progress id="progress" style="width:570px;margin-bottom:12px;display:none" value=0></progress>
+	<progress id="progress" value="0"></progress>
 </div>
 
-<div id="value" style="display:none">
+<div id="value">
   3da541559918a808c2402bba5012f6c60b27661c
 </div>
 </div>
-<footer style="position: absolute; bottom: 0; width: auto;padding: 20px;">
+<footer>
 <b>Hello.</b> This app was made by <a href="http://twitter.com/antimatter15">@antimatter15</a> (or <a href="https://plus.google.com/116347431032639424492/about">Google+</a>). Read my <a href="http://antimatter15.com/wp/">blog</a> for some other neat stuff. See how it works on <a href="https://github.com/antimatter15/js-typed-array-sha1">Github</a>.
 </footer>
 <script>
-if (Worker && Uint8Array && new Uint8Array() && ArrayBuffer && FileReader && new FileReader.readAsArrayBuffer) {}
-else {
+if (!(Worker && Uint8Array && new Uint8Array() && ArrayBuffer && FileReader && new FileReader().readAsArrayBuffer)) {
 	document.getElementById('featdetect').innerHTML = "It appears <b>your browser does not support all</b> the necessary features, it is known to work in recent versions of Chrome and Firefox.";
 }
 </script>
 
 <script>
-// yeah I'm so proud of this minified code
 var _gaq = [['_setAccount','UA-1367972-4'],['_trackPageview']];
 document.head.appendChild(document.createElement('script')).src='//www.google-analytics.com/ga.js';
 </script>
