@@ -6,7 +6,7 @@
 body {
 	background-color: #adadad;
 	font-family: sans-serif;
-	color:white;
+	color: white;
 }
 a {
 	text-decoration: none;
@@ -48,7 +48,7 @@ a {
 #center, #value {
 	-webkit-box-sizing: border-box;
 	   -moz-box-sizing: border-box;
-	        box-sizing: border-box
+	        box-sizing: border-box;
 	
 	opacity: 1;
 	
@@ -61,8 +61,8 @@ a {
 	background-image:         linear-gradient(357deg, #fcfcfc, #f7f7f7 3%, #f2f2f2 12%, #d9d9d9 90%, #bfbfbf);
 }
 #progress {
-	width:570px;
-	margin-bottom:12px;
+	width: 570px;
+	margin-bottom: 12px;
 	display:none;
 }
 footer {
@@ -75,27 +75,34 @@ footer {
 </head>
 <body>
 <script>
-var p = 0, worker;
+var worker;
+
 function selected(file){
-	if(worker) worker.terminate();
-	var realsize = Math.ceil((file.size/4 + 3)/16) * 16 * 4;
+	document.getElementById('value').style.display = '';
+	document.getElementById('progress').style.display = '';
+	
+	if (worker) worker.terminate();
 	worker = new Worker('worker.js');
-	lasttime = +new Date;
-	lastprocessed = 0;
+	
+	var realsize = Math.ceil((file.size / 4 + 3) / 16) * 16 * 4;
+	var lasttime = Date.now(),
+	    lastprocessed = 0,
+	    avgspeed = 0;
+	
 	worker.onmessage = function(e){
-		var time = +new Date;
-		var pct = e.data.processed/realsize;
+		var time = Date.now(),
+		    processed = e.data.processed,
+		    pct = processed / realsize,
+		    speed = ((processed - lastprocessed) >> 20) / ((time - lastTime) / 1000);
+		
+		lasttime = time;
+		lastprocessed = processed;
+		avgspeed = 0.1 * speed + 0.8 * avgspeed;
+		
 		document.getElementById('progress').value = pct;
-		document.getElementById('value').style.display = '';
-		document.getElementById('progress').style.display = '';
 		document.getElementById('value').innerHTML = e.data.hash;
 		document.getElementById('pct').innerHTML = (pct*100).toFixed(2)+'%';
-		document.getElementById('speed').innerHTML = (((e.data.processed - lastprocessed)/((time - lasttime)/1000))/1024/1024).toFixed(2) + 'MB/s';
-		//e.data.processed+'/'+realsize+' '+
-		if(p++ % 14 == 0){
-			lasttime = time;
-			lastprocessed = e.data.processed;
-		}
+		document.getElementById('speed').innerHTML = avgspeed;
 	}
 	worker.onerror = function(e){
 		console.error(e);
@@ -127,7 +134,7 @@ document.addEventListener("drop", function(e){
 		To begin, select <b>a file</b> (or <b>drag it here</b>).
 	</p>
 	<div style="float:right">
-	  <span id="speed" style='padding-right:10px;'></span>
+	  <span id="speed" style="padding-right:10px;"></span>
 	  <b id="pct"></b>
 	</div>
 	<p>
