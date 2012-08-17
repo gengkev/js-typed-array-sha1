@@ -16,36 +16,24 @@ function fileSlice(file, start, length){
   }
 }
 
-onmessage = function(e){
+self.onmessage = function(e){
   var d = e.data;
-  
-  if(d instanceof ArrayBuffer){ //its an array buffer!
-    processArrayBuffer(d, size);
-    if(size > position){
-      postMessage({action: 'requestChunk', amount: amount, position: position});
-      position += amount;
-    }
-  }else{
-    initialize();
-    position = 0;
-    size = d.size;
-    if(typeof FileReader == 'function'){
-      loadChunk(d.file);
-    }else{  //Firefox doesn't support FileReader inside WebWorkers
-      postMessage({action: 'requestChunk', position: position, amount: amount});
-      position += amount;
-    }
-  }
+  initialize();
+  position = 0;
+  size = d.size;
+  loadChunk(d.file);
 }
 
 function loadChunk(file){
-  var fr = new FileReader();
+  var fr = new (FileReader || FileReaderSync)();
+  
+  // fires for both FileReader and FileReaderSync
   fr.onload = function(){
     processArrayBuffer(fr.result, size);
     if(size > position) loadChunk(file);
   }
-  
   fr.readAsArrayBuffer(fileSlice(file, position, amount));
+  
   position += amount;
 }
 
