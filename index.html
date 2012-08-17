@@ -33,7 +33,7 @@ a {
 	top: 230px;
 	left: 42px;
 	width: 510px;
-	padding: 15px 15px 15px 10px;
+	padding: 15px 15px 10px 15px;
 	-webkit-box-shadow: 0 0 6px 6px rgba(0, 0, 0, 0.1);
 	   -moz-box-shadow: 0 0 6px 6px rgba(0, 0, 0, 0.1);
 	        box-shadow: 0 0 6px 6px rgba(0, 0, 0, 0.1);
@@ -77,8 +77,8 @@ footer {
 var worker;
 
 function selected(file){
-	document.getElementById('value').style.display = '';
-	document.getElementById('progress').style.display = '';
+	document.getElementById('value').style.display = 'block';
+	document.getElementById('progress').style.display = 'block';
 	
 	if (worker) worker.terminate();
 	worker = new Worker('worker.js');
@@ -93,9 +93,11 @@ function selected(file){
 	worker.onmessage = function(e){
 		var time = Date.now(),
 		    processed = e.data.processed,
-		    pct = processed / realsize,
-		    speed = ((processed - lastprocessed) >> 20) / ((time - lasttime) / 1000);
+		    pct = processed / realsize;
 		
+		if (time - lasttime < 121 && pct < 1) return;
+		
+		var speed = ((processed - lastprocessed) >> 20) / ((time - lasttime) / 1000);
 		avgspeed = 0.1 * speed + 0.8 * avgspeed;
 		
 		document.getElementById('progress').value = pct;
