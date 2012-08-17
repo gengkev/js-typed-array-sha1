@@ -76,16 +76,6 @@ footer {
 <body>
 <script>
 var p = 0, worker;
-function fileSlice(file, start, length){
-	var end = length + start;
-	if (file.mozSlice){
-		return file.mozSlice(start, end);
-	} else if  (file.webkitSlice){
-		return file.webkitSlice(start, end);
-	} else if (file.slice) {
-		return file.slice(start, end);
-	}
-}
 function selected(file){
 	if(worker) worker.terminate();
 	var realsize = Math.ceil((file.size/4 + 3)/16) * 16 * 4;
@@ -93,26 +83,18 @@ function selected(file){
 	lasttime = +new Date;
 	lastprocessed = 0;
 	worker.onmessage = function(e){
-		if (e.data.action == 'requestChunk'){
-			var fr = new FileReader();
-			fr.onload = function(){
-				worker.postMessage(fr.result);
-			}
-			fr.readAsArrayBuffer(fileSlice(file, e.data.position, e.data.amount));
-		} else{
-			var time = +new Date;
-			var pct = e.data.processed/realsize;
-			document.getElementById('progress').value = pct;
-			document.getElementById('value').style.display = '';
-			document.getElementById('progress').style.display = '';
-			document.getElementById('value').innerHTML = e.data.hash;
-			document.getElementById('pct').innerHTML = (pct*100).toFixed(2)+'%';
-			document.getElementById('speed').innerHTML = (((e.data.processed - lastprocessed)/((time - lasttime)/1000))/1024/1024).toFixed(2) + 'MB/s';
-			//e.data.processed+'/'+realsize+' '+
-			if(p++ % 14 == 0){
-				lasttime = time;
-				lastprocessed = e.data.processed;
-			}
+		var time = +new Date;
+		var pct = e.data.processed/realsize;
+		document.getElementById('progress').value = pct;
+		document.getElementById('value').style.display = '';
+		document.getElementById('progress').style.display = '';
+		document.getElementById('value').innerHTML = e.data.hash;
+		document.getElementById('pct').innerHTML = (pct*100).toFixed(2)+'%';
+		document.getElementById('speed').innerHTML = (((e.data.processed - lastprocessed)/((time - lasttime)/1000))/1024/1024).toFixed(2) + 'MB/s';
+		//e.data.processed+'/'+realsize+' '+
+		if(p++ % 14 == 0){
+			lasttime = time;
+			lastprocessed = e.data.processed;
 		}
 	}
 	worker.onerror = function(e){
