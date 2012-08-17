@@ -97,7 +97,7 @@ function selected(file){
 		
 		if (time - lasttime < 121 && pct < 1) return;
 		
-		var speed = ((processed - lastprocessed) >> 20) / ((time - lasttime) / 1000);
+		var speed = ((processed - lastprocessed) / 1024 / 1024) / ((time - lasttime) / 1000);
 		avgspeed = 0.1 * speed + 0.8 * avgspeed;
 		
 		document.getElementById('progress').value = pct;
