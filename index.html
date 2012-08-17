@@ -110,7 +110,7 @@ function selected(file){
 	worker.postMessage({file: file, size: size});
 }
 //do html5 drag and drop
-function stopEvt(e){e.preventDefault();e.stopPropogation();}
+function stopEvt(e){e.preventDefault();e.stopPropagation();}
 
 document.addEventListener("dragenter", stopEvt, false);
 document.addEventListener("dragexit", stopEvt, false);
