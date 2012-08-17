@@ -20,10 +20,8 @@ a {
 }
 #center {
 	display: inline-block;
-	color: black;
 	margin: -150px 0 0 -300px;
 	width: 600px;
-	z-index: 99;
 	padding: 0 15px;
 	-webkit-box-shadow: 0 0 6px 6px #a5a5a5;
 	   -moz-box-shadow: 0 0 6px 6px #a5a5a5;
@@ -31,26 +29,27 @@ a {
 	border-radius: 30px 0;
 }
 #value {
-	color: black;
 	margin: 0 0 0 -260px;
 	top: 230px;
 	left: 42px;
 	width: 510px;
-	z-index: 99;
-	padding: 15px;
+	padding: 15px 15px 15px 10px;
 	-webkit-box-shadow: 0 0 6px 6px rgba(0, 0, 0, 0.1);
 	   -moz-box-shadow: 0 0 6px 6px rgba(0, 0, 0, 0.1);
 	        box-shadow: 0 0 6px 6px rgba(0, 0, 0, 0.1);
 	font-family: monospace;
+	font-size: 20px;
 	border-radius: 0 0 10px 10px;
 	display: none;
 }
 #center, #value {
+	opacity: 1;
+	color: black;
+	z-index: 99;
+	
 	-webkit-box-sizing: border-box;
 	   -moz-box-sizing: border-box;
 	        box-sizing: border-box;
-	
-	opacity: 1;
 	
 	background: initial, initial, 100%, initial, initial, initial, initial, initial;
 	
@@ -84,7 +83,9 @@ function selected(file){
 	if (worker) worker.terminate();
 	worker = new Worker('worker.js');
 	
-	var realsize = Math.ceil((file.size / 4 + 3) / 16) * 16 * 4;
+	var size = file.size,
+	    realsize = Math.ceil((size / 4 + 3) / 16) * 16 * 4;
+	
 	var lasttime = Date.now(),
 	    lastprocessed = 0,
 	    avgspeed = 0;
@@ -93,16 +94,17 @@ function selected(file){
 		var time = Date.now(),
 		    processed = e.data.processed,
 		    pct = processed / realsize,
-		    speed = ((processed - lastprocessed) >> 20) / ((time - lastTime) / 1000);
+		    speed = ((processed - lastprocessed) >> 20) / ((time - lasttime) / 1000);
 		
-		lasttime = time;
-		lastprocessed = processed;
 		avgspeed = 0.1 * speed + 0.8 * avgspeed;
 		
 		document.getElementById('progress').value = pct;
-		document.getElementById('value').innerHTML = e.data.hash;
-		document.getElementById('pct').innerHTML = (pct*100).toFixed(2)+'%';
-		document.getElementById('speed').innerHTML = avgspeed;
+		document.getElementById('value').textContent = e.data.hash;
+		document.getElementById('pct').textContent = (pct * 100).toFixed(2) + '%';
+		document.getElementById('speed').textContent = avgspeed + 'MB/s';
+		
+		lasttime = time;
+		lastprocessed = processed;
 	}
 	worker.onerror = function(e){
 		console.error(e);
